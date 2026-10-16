@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Clock Quest</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e6f3f3;--ink:#12303a;--card:#fff;--line:#bcd8d8;--hour:#ef5b4f;--min:#0d7f82;--sun:#ffc233;--ok:#1f9d57;--bad:#d6453a;--muted:#4f6e75;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1d24;--ink:#e8f4f4;--card:#15303a;--line:#2b4a55;--hour:#ff7a6e;--min:#40c9cb;--ok:#47d37f;--bad:#ff7a6e;--muted:#9bbcc2;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1d24;--ink:#e8f4f4;--card:#15303a;--line:#2b4a55;--hour:#ff7a6e;--min:#40c9cb;--ok:#47d37f;--bad:#ff7a6e;--muted:#9bbcc2;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Fredoka,"Avenir Next Rounded","Trebuchet MS",system-ui,sans-serif;font-size:18px;line-height:1.4;min-height:100vh}
+main{max-width:520px;margin:0 auto;padding:16px}
+h1{font-size:2.4rem;margin:.2em 0 .1em;letter-spacing:-.5px}
+h2{font-size:1.5rem;margin:.2em 0}
+p{margin:.3em 0}
+.muted{color:var(--muted)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,svg:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+.btn{background:var(--min);color:#fff;border:0;border-radius:14px;padding:12px 22px;font-weight:600;min-height:48px}
+.btn.alt{background:transparent;color:var(--ink);border:2px solid var(--line)}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.levels{display:grid;gap:10px;margin-top:16px}
+.lv{display:flex;align-items:center;gap:14px;text-align:left;background:var(--card);border:2px solid var(--line);border-radius:16px;padding:12px 16px;min-height:64px}
+.lv:not([disabled]):hover{border-color:var(--min)}
+.lv[disabled]{opacity:.55;cursor:not-allowed}
+.lv b{font-size:1.6rem;width:2.2rem;height:2.2rem;border-radius:50%;background:var(--sun);color:#12303a;display:grid;place-items:center;flex:none;font-size:1.2rem}
+.lv span{flex:1}.lv small{display:block;color:var(--muted);font-size:.8rem}
+.hud{display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:600}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin:8px 0 4px}
+.bar i{display:block;height:100%;background:var(--sun);width:0;transition:width .3s}
+.clock{display:block;width:min(100%,360px);margin:8px auto;touch-action:none;user-select:none;-webkit-user-select:none}
+.clock.set{cursor:grab}
+.face{fill:var(--card);stroke:var(--ink);stroke-width:4}
+.tick{stroke:var(--muted);stroke-width:1}.tick.big{stroke:var(--ink);stroke-width:2.5}
+.num{fill:var(--ink);font-size:15px;font-weight:600;text-anchor:middle;dominant-baseline:central}
+.hh{stroke:var(--hour);stroke-width:8;stroke-linecap:round}
+.mh{stroke:var(--min);stroke-width:4.5;stroke-linecap:round}
+.pin{fill:var(--ink)}
+.hint-ring{fill:none;stroke:var(--sun);stroke-width:3;stroke-dasharray:4 4}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}
+.opt{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:14px;font-size:1.5rem;font-weight:600;min-height:60px}
+.opt:not([disabled]):hover{border-color:var(--min)}
+.opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 22%,var(--card))}
+.opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 18%,var(--card))}
+.target{font-size:2.6rem;font-weight:600;text-align:center;margin:0}
+.fb{border-radius:14px;padding:12px 14px;margin:10px 0;background:var(--card);border:2px solid var(--line)}
+.fb.ok{border-color:var(--ok)}.fb.no{border-color:var(--bad)}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:10px 0}
+.hidden{display:none!important}
+.stars{font-size:2.4rem;letter-spacing:6px;text-align:center}
+.tip{font-size:.85rem;text-align:center}
+.cap{background:color-mix(in srgb,var(--sun) 25%,var(--card));border-radius:12px;padding:10px 14px;margin-top:10px;min-height:4.4em}
+.tl{padding-left:1.1em;margin:.3em 0}.tl li{margin:.5em 0}
+.glow .hh{stroke-width:13;filter:drop-shadow(0 0 6px var(--sun))}.glow .mh{stroke-width:9;filter:drop-shadow(0 0 6px var(--sun))}
+@media (prefers-reduced-motion:no-preference){.pop{animation:pop .35s}@keyframes pop{50%{transform:scale(1.04)}}}
+</style>
+</head>
+<body>
+<main>
+<section id="menu">
+  <h1>Clock Quest</h1>
+  <p class="muted">Read the clock, then set it yourself. Pick any level to start. Get 6 out of 8 right to pass it.</p>
+  <button class="lv" id="learnbtn" style="margin-top:16px;border-color:var(--sun);width:100%"><b>?</b><span>Learn to read a clock<small id="learnsub"></small></span></button>
+  <div class="levels" id="levels"></div>
+</section>
+
+<section id="game" class="hidden">
+  <div class="hud"><button class="btn alt" id="quit" style="min-height:40px;padding:6px 14px">Menu</button><span id="lvname"></span><span id="score"></span></div>
+  <div class="bar"><i id="prog"></i></div>
+  <h2 id="q" style="text-align:center"></h2>
+  <p class="target hidden" id="target"></p>
+  <svg id="clock" class="clock" viewBox="0 0 200 200" role="img" aria-label="Analog clock"></svg>
+  <p class="tip muted hidden" id="settip">Drag near the edge for the long hand. Drag near the middle for the short hand.</p>
+  <div class="opts" id="opts"></div>
+  <div class="row"><button class="btn hidden" id="check">Check my clock</button><button class="btn alt" id="hintbtn">Hint</button></div>
+  <div class="fb hidden" id="fb"></div>
+  <div class="row"><button class="btn hidden" id="next">Next</button></div>
+</section>
+
+<section id="learn" class="hidden">
+  <div class="hud"><button class="btn alt" id="lquit" style="min-height:40px;padding:6px 14px">Menu</button><span id="ltitle"></span></div>
+  <div class="bar"><i id="lprog"></i></div>
+  <h2 id="lh" style="text-align:center"></h2>
+  <svg id="tclock" class="clock" viewBox="0 0 200 200" role="img" aria-label="Demonstration clock"></svg>
+  <p id="lintro" style="margin:.4em 0"></p>
+  <div class="cap" id="lcap" aria-live="polite"></div>
+  <div class="row" id="lctl"></div>
+  <div id="tqc" class="hidden"></div>
+  <div class="row"><button class="btn alt" id="lprev">Back</button><button class="btn" id="lnext">Next lesson</button></div>
+</section>
+
+<section id="end" class="hidden">
+  <h1 id="endtitle"></h1>
+  <div class="stars" id="stars"></div>
+  <p id="endmsg" style="text-align:center"></p>
+  <div class="row"><button class="btn" id="again">Play again</button><button class="btn hidden" id="nextlv">Next level</button><button class="btn alt" id="tomenu">Menu</button></div>
+</section>
+</main>
+
+<script>
+const $=s=>document.querySelector(s);
+const LV=[{n:"On the hour",ms:[0],st:15},{n:"Half hours",ms:[0,30],st:15},{n:"Quarter hours",ms:[0,15,30,45],st:15},{n:"Five minutes",st:5},{n:"Any minute",st:1},{n:"Time in words",w:true,st:5},{n:"Words: every minute",w:true,st:1},{n:"AM, PM and the day",k:"ampm",st:5},{n:"Time later",k:"later",st:5},{n:"Time master",k:"mix",st:1}];
+const TOTAL=8,PASS=6;
+let save={unlocked:0,best:[]};
+try{const s=JSON.parse(localStorage.getItem("clockquest")||"null");if(s)save=s}catch(e){}
+const persist=()=>{try{localStorage.setItem("clockquest",JSON.stringify(save))}catch(e){}};
+let level=0,q=0,score=0,mode="read",target,cur,G,answered=false,drag=null,last="";
+
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+const f=(h,m)=>`${h}:${String(m).padStart(2,"0")}`;
+const nxt=h=>h%12+1;
+const NW=["","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen","twenty"];
+const nw=n=>n<=20?NW[n]:"twenty-"+NW[n-20];
+function words(t){const{h,m}=t;if(m==0)return`${NW[h]} o'clock`;if(m==15)return`quarter past ${NW[h]}`;if(m==30)return`half past ${NW[h]}`;if(m==45)return`quarter to ${NW[nxt(h)]}`;const k=m<30?m:60-m,u=m%5==0?"":k==1?" minute":" minutes";return`${nw(k)}${u} ${m<30?"past "+NW[h]:"to "+NW[nxt(h)]}`}
+function tip(t){const{h,m}=t,n=Math.floor(m/5)||12,x=m%5;
+ const a=m==0?`The short hand points right at the ${h}.`:`The short hand is between the ${h} and the ${nxt(h)}. It hasn't reached the ${nxt(h)}, so the hour is ${h}.`;
+ const b=`The long hand is ${x?`${x} tick${x>1?"s":""} past the ${n}`:`on the ${n}`}, which is ${m} minute${m==1?"":"s"}.`;
+ return a+" "+b}
+function newTime(){const L=LV[level];let t,k;do{const m=L.ms?rnd(L.ms):Math.floor(Math.random()*(60/L.st))*L.st;t={h:1+Math.floor(Math.random()*12),m};k=f(t.h,t.m)}while(k==last);last=k;return t}
+function options(t){const set=new Map(),add=(h,m)=>{h=((h-1+12)%12)+1;m=(m+60)%60;set.set(f(h,m),{h,m})};
+ add(t.h,t.m);const L=LV[level];
+ if(t.m%5==0)add(t.m/5||12,(t.h%12)*5);
+ add(t.h+1,t.m);add(t.h-1,t.m);add(t.h,t.m+30);add(t.h,t.m+(L.st<15?L.st*2:15));add(t.h,t.m-(L.st<15?L.st*2:15));
+ const all=[...set.values()].filter(o=>f(o.h,o.m)!=f(t.h,t.m));
+ all.sort(()=>Math.random()-.5);
+ const out=[t,...all.slice(0,3)];
+ while(out.length<4){const o={h:1+Math.floor(Math.random()*12),m:t.m};if(!out.some(p=>f(p.h,p.m)==f(o.h,o.m)))out.push(o)}
+ return out.sort(()=>Math.random()-.5)}
+
+/* question generator */
+const SC=[{s:"You wake up and eat breakfast",h:[6,7,8],p:"AM"},{s:"The sun comes up",h:[5,6],p:"AM"},{s:"Morning break at school",h:[10,11],p:"AM"},{s:"You eat lunch",h:[12,1],p:"PM"},{s:"School finishes for the day",h:[3,4],p:"PM"},{s:"You eat dinner",h:[5,6,7],p:"PM"},{s:"You go to bed",h:[8,9],p:"PM"},{s:"It's the middle of the night and you're fast asleep",h:[1,2,3],p:"AM"}];
+const phr=d=>d==15?"a quarter of an hour":d==30?"half an hour":d==60?"1 hour":d==90?"1 hour 30 minutes":d==120?"2 hours":d+" minutes";
+const plus=(t,d)=>{const tot=(t.h%12)*60+t.m+d;return{h:(Math.floor(tot/60)%12)||12,m:tot%60}};
+const fill=(c,arr)=>{const s=[c];arr.forEach(x=>{if(!s.includes(x))s.push(x)});while(s.length<4){const x=f(1+Math.floor(Math.random()*12),Math.floor(Math.random()*12)*5);if(!s.includes(x))s.push(x)}return s.slice(0,4)};
+function gen(lv,qt){const o=level;level=lv;const L=LV[lv],ww=!!L.w||qt[0]=="w";if(qt[0]=="w")qt=qt.slice(1);
+ let t=newTime();const lab=x=>ww?words(x):f(x.h,x.m),g={qt,ww,lab};
+ if(qt=="ampm"){const s=rnd(SC),h=rnd(s.h),m=L.st==1?Math.floor(Math.random()*60):Math.floor(Math.random()*12)*5,p=s.p,op=p=="AM"?"PM":"AM",lb=(a,b,c)=>`${f(a,b)} ${c}`;t={h,m};
+  g.corr=lb(h,m,p);g.labs=[g.corr,lb(h,m,op),lb(nxt(h),m,p),lb(h,(m+30)%60,op)];
+  g.prompt=`${s.s}. The clock shows ${f(h,m)}. Which time is right?`;
+  g.hint="AM is for midnight to noon. PM is for noon to midnight. Ask yourself: is it light or dark outside, and what are you doing?";
+  g.ok=`<b>Yes!</b> ${s.s}, so it's ${g.corr}.`;g.no=`<b>Not quite.</b> ${s.s}, so it's ${g.corr}. AM is midnight to noon. PM is noon to midnight.`}
+ else if(qt=="later"){const d=rnd(L.st==1?[7,12,18,25,35,40,50,55,75,80,95]:[10,15,20,25,30,35,40,45,60,75,90,120]),r=plus(t,d);
+  g.corr=f(r.h,r.m);g.labs=fill(g.corr,[f(nxt(r.h),r.m),f((r.h+10)%12+1,r.m),f(t.h,(t.m+d)%60),f(r.h,(r.m+30)%60)]);
+  g.prompt=`It's ${f(t.h,t.m)}. What time will it be after ${phr(d)}?`;
+  g.hint=`Count on from ${f(t.h,t.m)}. Add the whole hours first, then the minutes. If the minutes pass 60, take 60 off and add one hour.`;
+  g.ok=`<b>Yes!</b> ${f(t.h,t.m)} plus ${phr(d)} is ${g.corr}.`;g.no=`<b>Not quite.</b> ${f(t.h,t.m)} plus ${phr(d)} is ${g.corr}. ${g.hint}`}
+ else{g.corr=lab(t);g.labs=qt=="read"?options(t).map(lab):[];g.hint=tip(t)+(ww?" Remember: past is for the first half of the hour, to is for the second half.":"");
+  g.ok=`<b>Yes!</b> ${f(t.h,t.m)} is ${words(t)}.`;g.no=`<b>Not quite.</b> The answer is ${f(t.h,t.m)} (${words(t)}). ${tip(t)}`}
+ level=o;g.t=t;g.labs=g.labs.sort(()=>Math.random()-.5);return g}
+
+/* clock */
+const svg=$("#clock");
+(function build(){let s='<circle class="face" cx="100" cy="100" r="94"/>';
+ for(let i=0;i<60;i++){const a=i*6*Math.PI/180,big=i%5==0,r1=big?80:85,r2=90;
+  s+=`<line class="tick${big?" big":""}" x1="${100+r1*Math.sin(a)}" y1="${100-r1*Math.cos(a)}" x2="${100+r2*Math.sin(a)}" y2="${100-r2*Math.cos(a)}"/>`}
+ for(let i=1;i<=12;i++){const a=i*30*Math.PI/180;s+=`<text class="num" x="${100+66*Math.sin(a)}" y="${100-66*Math.cos(a)}">${i}</text>`}
+ s+='<g id="hg"><line class="hh" x1="100" y1="100" x2="100" y2="58"/></g><g id="mg"><line class="mh" x1="100" y1="100" x2="100" y2="26"/></g><circle class="pin" cx="100" cy="100" r="6"/>';
+ svg.innerHTML=s})();
+function draw(){$("#hg").setAttribute("transform",`rotate(${(cur.h%12)*30+cur.m*.5} 100 100)`);$("#mg").setAttribute("transform",`rotate(${cur.m*6} 100 100)`)}
+function pt(e){const r=svg.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*200-100,y=(e.clientY-r.top)/r.height*200-100;return{r:Math.hypot(x,y),a:(Math.atan2(x,-y)*180/Math.PI+360)%360}}
+function move(e){const{a}=pt(e);
+ if(drag=="m"){const st=LV[level].st;cur.m=(Math.round(a/6/st)*st)%60}
+ else{cur.h=((Math.round((a-cur.m*.5)/30)%12)+12)%12}
+ draw()}
+svg.addEventListener("pointerdown",e=>{if(mode!="set"||answered)return;svg.setPointerCapture(e.pointerId);drag=pt(e).r<52?"h":"m";move(e)});
+svg.addEventListener("pointermove",e=>{if(drag)move(e)});
+["pointerup","pointercancel"].forEach(v=>svg.addEventListener(v,()=>drag=null));
+
+/* screens */
+function show(id){["menu","game","end","learn"].forEach(s=>$("#"+s).classList.toggle("hidden",s!=id))}
+function menu(){const box=$("#levels");box.innerHTML="";$("#learnsub").textContent=save.learned?"Finished. Review any time":"13 short lessons with practice. Start here!";
+ LV.forEach((L,i)=>{const b=document.createElement("button");b.className="lv";
+  const best=save.best[i];
+  b.innerHTML=`<b>${i+1}</b><span>${L.n}<small>${best!=null?(best>=PASS?"Passed. ":"")+"Best: "+best+" / "+TOTAL:"Not played yet"}</small></span>`;
+  b.onclick=()=>start(i);box.appendChild(b)});
+ show("menu")}
+function start(i){level=i;q=0;score=0;last="";$("#lvname").textContent=`Level ${i+1}: ${LV[i].n}`;show("game");ask()}
+function ask(){answered=false;const L=LV[level],qt=L.k=="mix"?rnd(["read","set","wread","wset","ampm","later"]):L.k?L.k:(q%2==0?"read":"set");G=gen(level,qt);mode=G.qt=="set"?"set":"read";target=G.t;
+ $("#prog").style.width=(q/TOTAL*100)+"%";$("#score").textContent=`${score} right`;
+ $("#fb").classList.add("hidden");$("#next").classList.add("hidden");$("#hintbtn").disabled=false;
+ const rd=mode=="read";
+ $("#q").textContent=rd?(G.prompt||"What time does the clock show?"):"Set the clock to:";
+ $("#target").classList.toggle("hidden",rd);$("#settip").classList.toggle("hidden",rd);
+ $("#check").classList.toggle("hidden",rd);$("#check").disabled=false;$("#opts").classList.toggle("hidden",!rd);
+ svg.classList.toggle("set",!rd);
+ if(rd){cur={h:target.h,m:target.m};const o=$("#opts");o.innerHTML="";
+  G.labs.forEach(l=>{const b=document.createElement("button");b.className="opt";b.textContent=l;b.onclick=()=>answer(l==G.corr,b);o.appendChild(b)})}
+ else{$("#target").textContent=G.lab(target);cur={h:0,m:0}}
+ draw()}
+function answer(ok,btn){if(answered)return;answered=true;drag=null;
+ if(ok)score++;
+ const t=target,w=words(t);
+ if(mode=="read"){document.querySelectorAll(".opt").forEach(b=>{b.disabled=true;if(b.textContent==G.corr)b.classList.add("right")});if(!ok)btn.classList.add("wrong")}
+ else{$("#check").disabled=true;if(!ok){cur={h:t.h%12,m:t.m}}draw()}
+ const fb=$("#fb");fb.className="fb "+(ok?"ok pop":"no");
+ fb.innerHTML=ok?G.ok:G.no;
+ $("#score").textContent=`${score} right`;$("#hintbtn").disabled=true;
+ $("#next").textContent=q+1>=TOTAL?"See results":"Next";$("#next").classList.remove("hidden");$("#prog").style.width=((q+1)/TOTAL*100)+"%"}
+$("#check").onclick=()=>answer(cur.h%12==target.h%12&&cur.m==target.m);
+$("#hintbtn").onclick=()=>{const fb=$("#fb");fb.className="fb";fb.innerHTML="<b>Hint:</b> "+G.hint+(mode=="set"?" Set the minutes first, then check the hour.":"")};
+$("#next").onclick=()=>{q++;if(q>=TOTAL)finish();else ask()};
+function finish(){const pass=score>=PASS;
+ if(save.best[level]==null||score>save.best[level])save.best[level]=score;
+ const last=level>=LV.length-1;
+ if(pass&&!last&&save.unlocked<level+1)save.unlocked=level+1;persist();
+ const st=score>=TOTAL?3:score>=7?2:pass?1:0;
+ $("#stars").textContent="★".repeat(st)+"☆".repeat(3-st);
+ $("#endtitle").textContent=`${score} out of ${TOTAL}`;
+ $("#endmsg").textContent=pass?(last?"You've finished every level. You can read any clock!":"Level passed! Ready for the next one?"):"Almost there. Get 6 right to pass. Try again!";
+ $("#nextlv").classList.toggle("hidden",!(pass&&!last));
+ show("end")}
+$("#again").onclick=()=>start(level);
+$("#nextlv").onclick=()=>start(level+1);
+$("#tomenu").onclick=menu;$("#quit").onclick=menu;
+
+/* tutorial */
+const tsvg=$("#tclock");
+tsvg.innerHTML=svg.innerHTML.replace('<g id="hg">','<path id="tpie" fill="var(--sun)" opacity=".4"/><g id="thg">').replace('<g id="mg">','<g id="tmg">');
+let T={h:3,m:0,pie:false},cl=0,timer=null,rv=0,upd=()=>{};
+function drawT(){$("#thg").setAttribute("transform",`rotate(${(T.h%12)*30+T.m*.5} 100 100)`);$("#tmg").setAttribute("transform",`rotate(${T.m*6} 100 100)`);
+ const a=T.m*6*Math.PI/180;$("#tpie").setAttribute("d",T.pie&&T.m?`M100 100 L100 10 A90 90 0 ${T.m>30?1:0} 1 ${100+90*Math.sin(a)} ${100-90*Math.cos(a)}Z`:"")}
+const cap=h=>{$("#lcap").innerHTML=h};
+function ctl(list){const b=$("#lctl");b.innerHTML="";list.forEach(([l,fn,alt])=>{const x=document.createElement("button");x.className="btn"+(alt?" alt":"");x.textContent=l;x.onclick=fn;b.appendChild(x)})}
+const hr=d=>{T.h=((T.h-1+d+12)%12)+1;upd()};
+const adv=d=>{T.m+=d;if(T.m>=60){T.m-=60;T.h=nxt(T.h)}if(T.m<0){T.m+=60;T.h=(T.h+10)%12+1}upd()};
+const hrBtns=[["◀ Earlier hour",()=>hr(-1)],["Later hour ▶",()=>hr(1)]];
+const hs=t=>t.m==0?`The short hand points right at the ${t.h}, so the hour is ${t.h}.`:`The short hand is between the ${t.h} and the ${nxt(t.h)}. It hasn't reached the ${nxt(t.h)}, so the hour is ${t.h}.`;
+const ms=t=>{const n=Math.floor(t.m/5)||12,x=t.m%5;return `The long hand is ${x?`${x} tick${x>1?"s":""} past the ${n}`:`on the ${n}`}, so the minutes are ${t.m}.`};
+const LS=[
+{t:"Meet the clock",i:"A clock has two hands that move <b>clockwise</b>, the same direction the numbers count up from 1 to 12. Tap each button to light up a part of the clock.",go(){T={h:3,m:0,pie:false};upd=drawT;
+ const g=(w,s)=>()=>{$("#thg").classList.toggle("glow",w=="h");$("#tmg").classList.toggle("glow",w=="m");cap(s)};
+ ctl([["Short hand",g("h","The <b>short, fat hand</b> is the <b>hour hand</b>. It tells you the hour.")],["Long hand",g("m","The <b>long, thin hand</b> is the <b>minute hand</b>. It tells you the minutes.")],["Numbers",g("","The numbers 1 to 12 are the hours. For the long hand, each number also means <b>5 minutes</b>. Both hands always move clockwise.")]]);
+ cap("Tap a button to meet each part of the clock.")}},
+{t:"On the hour",lv:0,i:"Forget minutes for now. When the long hand points straight up at the <b>12</b>, it's an <b>o'clock</b> time. The short hand tells you which hour. Change the hour with the buttons.",go(){T={h:3,m:0,pie:false};upd=()=>{drawT();cap(`Long hand on the 12. Short hand on the ${T.h}. It's <b>${T.h} o'clock</b> (${f(T.h,0)}).`)};ctl(hrBtns)}},
+{t:"Half past",lv:1,i:"When the long hand points straight down at the <b>6</b>, half the hour has gone by. We call that <b>half past</b>. The short hand is now <b>between</b> two numbers. Read the number it <b>just passed</b>.",go(){T={h:4,m:30,pie:true};upd=()=>{drawT();cap(`Long hand on the 6 means half past (the shaded half). The short hand is between the ${T.h} and the ${nxt(T.h)}. It hasn't reached the ${nxt(T.h)}, so it's <b>half past ${T.h}</b> (${f(T.h,30)}).`)};ctl(hrBtns)}},
+{t:"Quarter past and quarter to",lv:2,i:"A quarter is one of four equal parts, like a slice of pizza. Long hand on the <b>3</b> is a quarter of the way round: <b>quarter past</b>. Long hand on the <b>9</b> is three quarters of the way round, so a quarter of the hour is left: <b>quarter to</b> the next hour.",go(){T={h:4,m:15,pie:true};upd=()=>{drawT();cap(T.m==15?`Long hand on the 3: a quarter of the way round (the shaded slice). It's <b>quarter past ${T.h}</b> (${f(T.h,15)}).`:`Long hand on the 9: three quarters of the way round. In 15 more minutes it will be ${nxt(T.h)} o'clock, so it's <b>quarter to ${nxt(T.h)}</b> (${f(T.h,45)}). The short hand is still before the ${nxt(T.h)}.`)};ctl([["Quarter past",()=>{T.m=15;upd()}],["Quarter to",()=>{T.m=45;upd()}],...hrBtns])}},
+{t:"Counting by fives",lv:3,i:"Each number on the clock is worth <b>5 minutes</b>. To read the minutes, skip count: 5, 10, 15, 20... Tap <b>Count with me</b> and watch the long hand.",go(){T={h:4,m:0,pie:true};upd=()=>{drawT();const n=T.m/5;cap(n?`Skip count: ${Array.from({length:n},(_,i)=>(i+1)*5).join(", ")}. The long hand is on the ${n}, so <b>${T.m} minutes</b>.`:`Long hand on the 12: <b>0 minutes</b>. Tap +5 min to move it.`)};
+ ctl([["−5 min",()=>adv(-5)],["+5 min",()=>adv(5)],["Count with me",()=>{clearInterval(timer);T.m=0;upd();timer=setInterval(()=>{if(T.m>=55){clearInterval(timer);return}T.m+=5;upd()},800)}]])}},
+{t:"Every minute",lv:4,i:"The small marks are single minutes. Count the fives first, then add the extra tick marks. In words, use <b>past</b> for 1 to 30 minutes and <b>to</b> after that.",go(){T={h:4,m:12,pie:true};upd=()=>{drawT();const n=Math.floor(T.m/5),x=T.m%5;cap(`The long hand has passed ${n?`the ${n} (${n*5} minutes)`:"the 12 (0 minutes)"}${x?`, plus <b>${x}</b> tick${x>1?"s":""}`:""}, so it shows <b>${T.m} minutes</b>. ${f(T.h,T.m)} in words: ${words(T)}.`)};
+ ctl([["−1 min",()=>adv(-1)],["+1 min",()=>adv(1)],["+5 min",()=>adv(5)],...hrBtns])}},
+{t:"Past and to",lv:5,i:"To say the time in words, look at where the long hand is. On the <b>right side</b> of the clock (1 to 30 minutes), say <b>past</b>: ten <b>past</b> four. On the <b>left side</b> (more than 30 minutes), count the minutes <b>left</b> until the next hour and say <b>to</b>: ten <b>to</b> five. The shaded part shows the minutes that have gone.",go(){T={h:4,m:10,pie:true};upd=()=>{drawT();const m=T.m;cap(m==0?`Long hand on the 12: <b>${words(T)}</b>.`:m<=30?`The long hand is on the right side. ${m} minutes have gone since ${T.h} o'clock, so we say <b>${words(T)}</b> (${f(T.h,m)}).`:`The long hand is on the left side. Only ${60-m} minutes are left until ${nxt(T.h)} o'clock, so we say <b>${words(T)}</b> (${f(T.h,m)}). Use the <b>next</b> hour.`)};ctl([["-5 min",()=>adv(-5)],["+5 min",()=>adv(5)]])}},
+{t:"Every minute in words",lv:6,i:"For minutes that aren't a multiple of five, say the number of minutes: <b>twelve minutes past</b> four, <b>seven minutes to</b> five. Say <b>one minute</b> (not minutes) for 1. For <b>to</b> phrases, count the minutes that are <b>left</b>, not the minutes that have gone.",go(){T={h:4,m:53,pie:true};upd=()=>{drawT();const m=T.m;cap(`<b>${words(T)}</b> (${f(T.h,m)}). ${m==0?"Exactly on the hour.":m<=30?`${m} minute${m==1?"":"s"} after the ${T.h}.`:`${60-m} minute${60-m==1?"":"s"} before the ${nxt(T.h)}.`}`)};ctl([["-1 min",()=>adv(-1)],["+1 min",()=>adv(1)],["+5 min",()=>adv(5)]])}},
+{t:"Nearly, just after, about",i:"People don't always say the exact minute. They round the time with small words: <b>nearly</b> (a little before), <b>just after</b> (a little past) and <b>about</b> (close enough). Tap a time to hear how people say it.",go(){const ex=[[4,58,"nearly five o'clock","It's two minutes before 5 o'clock."],[4,2,"just after four o'clock","It's two minutes past 4 o'clock."],[4,28,"nearly half past four","It's two minutes before the half hour."],[4,33,"just after half past four","It's three minutes past the half hour."],[4,22,"about twenty past four","22 minutes is close to 20, so people round it."]];T={h:4,m:58,pie:false};upd=drawT;ctl(ex.map(([h,m,p,w])=>[f(h,m),()=>{T={h,m,pie:false};drawT();cap(`<b>${f(h,m)}</b> is <b>${p}</b>. ${w}`)}]));cap("Tap a time to hear how people say it.")}},
+{t:"Morning, noon and night",lv:7,qt:"ampm",i:"The clock only counts to 12, but a day has 24 hours, so every time happens <b>twice</b> a day. <b>AM</b> is from midnight to noon (the morning). <b>PM</b> is from noon to midnight (afternoon, evening and night). <b>Noon</b> is 12 in the middle of the day. <b>Midnight</b> is 12 in the middle of the night.",go(){const ex=[["Midnight",12,0,"AM","The middle of the night. A new day begins."],["Wake up",7,0,"AM","It's morning, so we write AM."],["Noon",12,0,"PM","The middle of the day. After noon, the PM hours begin."],["After school",4,0,"PM","It's the afternoon, so we write PM."],["Bedtime",9,0,"PM","It's night, but still before midnight, so we write PM."]];T={h:7,m:0,pie:false};upd=drawT;ctl(ex.map(([l,h,m,a,w])=>[l,()=>{T={h,m,pie:false};drawT();cap(`<b>${l}</b>: ${f(h,m)} ${a}. ${w}`)}]));cap("Tap a moment of the day.")}},
+{t:"Time later",lv:8,qt:"later",i:"To find the time later, <b>count on</b> from the start. Add whole hours first, then the minutes. If the minutes pass 60, take 60 off and add one hour. Useful phrases: <b>a quarter of an hour</b> is 15 minutes, <b>half an hour</b> is 30 minutes, and <b>an hour and a half</b> is 90 minutes.",go(){let S={h:3,m:15};T={...S,pie:false};upd=drawT;const show=d=>{const r=plus(S,d);T={...r,pie:false};drawT();cap(`Start at <b>${f(S.h,S.m)}</b>. After ${phr(d)} it's <b>${f(r.h,r.m)}</b> (${words(r)}).`)};ctl([["+15 min",()=>show(15)],["+30 min",()=>show(30)],["+1 hour",()=>show(60)],["+90 min",()=>show(90)],["New start time",()=>{S={h:1+Math.floor(Math.random()*12),m:Math.floor(Math.random()*12)*5};T={...S,pie:false};drawT();cap(`New start: <b>${f(S.h,S.m)}</b>. Tap a button to jump ahead.`)},1]]);cap(`Start at <b>${f(S.h,S.m)}</b>. Tap a button to jump ahead.`)}},
+{t:"Put it together",i:"Use the same three steps every time. <b>1.</b> Short hand: find the hour. <b>2.</b> Long hand: count by fives for the minutes. <b>3.</b> Say the time. Try to guess before you reveal each step.",go(){rv=0;const o=level;level=3;T={...newTime(),pie:false};level=o;
+ upd=()=>{drawT();cap(rv==0?"Look at the clock. What do you notice first? Tap <b>Reveal next step</b> to check your thinking.":`<b>Step 1:</b> ${hs(T)}`+(rv>1?`<br><b>Step 2:</b> ${ms(T)}`:"")+(rv>2?`<br><b>Step 3:</b> It's <b>${f(T.h,T.m)}</b>, or ${words(T)}.`:""))};
+ ctl([["Reveal next step",()=>{rv=Math.min(3,rv+1);upd()}],["New clock",()=>{LS.find(x=>x.t=="Put it together").go();upd()},1]])}},
+{t:"Tricks and traps",i:'<ul class="tl"><li><b>Short hand is the hour, long hand is the minutes.</b> If you mix them up, ask which one is fatter.</li><li><b>Read the hour hand by the number it just passed</b>, even when it looks close to the next number.</li><li><b>Past</b> is for 1 to 30 minutes. <b>To</b> is for 31 to 59 minutes, and then the hour you say is the <b>next</b> number.</li><li><b>Long hand on the 9 means 45 minutes</b>, not 9!</li></ul>',go(){T={h:4,m:45,pie:true};upd=()=>{drawT();cap(`This clock says <b>${f(4,45)}</b>. The short hand hasn't reached the 5, so the hour is 4. The long hand is on the 9, and 9 × 5 = 45 minutes. In words: <b>quarter to 5</b>. You're ready to play!`)};ctl([])}}
+];
+function lesson(n){clearInterval(timer);cl=n;const L=LS[n];$("#thg").classList.remove("glow");$("#tmg").classList.remove("glow");
+ $("#ltitle").textContent=`Lesson ${n+1} of ${LS.length}`;$("#lprog").style.width=((n+1)/LS.length*100)+"%";$("#lh").textContent=L.t;$("#lintro").innerHTML=L.i;$("#tqc").classList.add("hidden");
+ L.go();upd();
+ if(L.lv!=null){const b=document.createElement("button");b.className="btn alt";b.textContent="Quick check";b.onclick=()=>quick(n);$("#lctl").appendChild(b)}
+ const end=n==LS.length-1;$("#lprev").disabled=n==0;$("#lnext").textContent=end?"Start Level 1":"Next lesson";
+ if(end){save.learned=true;persist()}}
+function quick(n){clearInterval(timer);const g=gen(LS[n].lv,LS[n].qt||"read"),t=g.t;
+ T={h:t.h,m:t.m,pie:false};drawT();cap(g.prompt||"What time does the clock show?");$("#lctl").innerHTML="";
+ const box=$("#tqc");box.classList.remove("hidden");box.innerHTML='<div class="opts"></div><div class="fb hidden"></div><div class="row"></div>';
+ const op=box.children[0],fb=box.children[1],rw=box.children[2];
+ g.labs.forEach(l=>{const b=document.createElement("button");b.className="opt";b.textContent=l;b.onclick=()=>{
+  const ok=l==g.corr;op.querySelectorAll(".opt").forEach(y=>{y.disabled=true;if(y.textContent==g.corr)y.classList.add("right")});if(!ok)b.classList.add("wrong");
+  fb.className="fb "+(ok?"ok pop":"no");fb.innerHTML=ok?g.ok:g.no;
+  rw.innerHTML="";[["Another one",()=>quick(n)],["Back to lesson",()=>lesson(n),1]].forEach(([l,fn,alt])=>{const z=document.createElement("button");z.className="btn"+(alt?" alt":"");z.textContent=l;z.onclick=fn;rw.appendChild(z)})};op.appendChild(b)})}
+$("#learnbtn").onclick=()=>{show("learn");lesson(0)};
+$("#lprev").onclick=()=>lesson(cl-1);
+$("#lnext").onclick=()=>{if(cl<LS.length-1)lesson(cl+1);else start(0)};
+$("#lquit").onclick=()=>{clearInterval(timer);menu()};
+menu();
+</script>
+</body>
+</html>
